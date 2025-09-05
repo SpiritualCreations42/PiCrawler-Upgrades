@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PiCrawler Object Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+        
+        .video-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        #videoFeed {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .video-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        
+        .controls-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        
+        .control-group {
+            margin-bottom: 25px;
+        }
+        
+        .control-group h3 {
+            margin-bottom: 15px;
+            color: #fff;
+            font-size: 1.2em;
+        }
+        
+        .button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            margin: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .button:active {
+            transform: translateY(0);
+        }
+        
+        .button.primary {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+        }
+        
+        .button.success {
+            background: linear-gradient(45deg, #56ab2f, #a8e6cf);
+        }
+        
+        .button.warning {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+        }
+        
+        .button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status-panel {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .status-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .status-value {
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+        
+        .speed-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .speed-display {
+            background: rgba(0,0,0,0.3);
+            padding: 8px 15px;
+            border-radius: 5px;
+            min-width: 60px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .manual-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .manual-controls .button {
+            padding: 15px 10px;
+            font-size: 0.9em;
+        }
+        
+        .manual-controls .button:nth-child(2) {
+            grid-column: 2;
+        }
+        
+        .manual-controls .button:nth-child(3) {
+            grid-column: 1;
+            grid-row: 2;
+        }
+        
+        .manual-controls .button:nth-child(4) {
+            grid-column: 2;
+            grid-row: 2;
+        }
+        
+        .manual-controls .button:nth-child(5) {
+            grid-column: 3;
+            grid-row: 2;
+        }
+        
+        .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+        
+        .message.show {
+            transform: translateX(0);
+        }
+        
+        .message.success {
+            background: linear-gradient(45deg, #56ab2f, #a8e6cf);
+        }
+        
+        .message.error {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .manual-controls {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🕷️ PiCrawler Object Detection</h1>
+            <p>Real-time camera feed with intelligent object following</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="video-section">
+                <h2 style="margin-bottom: 20px;">Live Camera Feed</h2>
+                <div class="video-container">
+                    <img id="videoFeed" src="/video_feed" alt="Camera Feed">
+                    <div class="video-overlay">
+                        <div>Live Stream</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="controls-section">
+                <div class="control-group">
+                    <h3>📊 System Status</h3>
+                    <div class="status-panel">
+                        <div class="status-item">
+                            <span>Following Mode:</span>
+                            <span class="status-value" id="followingStatus">OFF</span>
+                        </div>
+                        <div class="status-item">
+                            <span>Robot Speed:</span>
+                            <span class="status-value" id="speedStatus">80</span>
+                        </div>
+                        <div class="status-item">
+                            <span>Objects Detected:</span>
+                            <span class="status-value" id="objectsStatus">0</span>
+                        </div>
+                        <div class="status-item">
+                            <span>Last Action:</span>
+                            <span class="status-value" id="actionStatus">None</span>
+                        </div>
+                        <div class="status-item">
+                            <span>Robot Status:</span>
+                            <span class="status-value" id="robotStatus">Unknown</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>🎯 Auto Following</h3>
+                    <button class="button primary" onclick="toggleFollowing()">
+                        <span id="followButton">Start Following</span>
+                    </button>
+                    <button class="button warning" onclick="emergencyStop()">
+                        Emergency Stop
+                    </button>
+                </div>
+                
+                <div class="control-group">
+                    <h3>⚡ Speed Control</h3>
+                    <div class="speed-controls">
+                        <button class="button" onclick="changeSpeed('down')">−</button>
+                        <div class="speed-display" id="speedDisplay">80</div>
+                        <button class="button" onclick="changeSpeed('up')">+</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>🎮 Manual Control</h3>
+                    <div class="manual-controls">
+                        <button class="button" onclick="manualControl('forward')">↑ Forward</button>
+                        <button class="button" onclick="manualControl('turn left')">← Left</button>
+                        <button class="button" onclick="manualControl('backward')">↓ Back</button>
+                        <button class="button" onclick="manualControl('turn right')">→ Right</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="message" class="message"></div>
+    
+    <script>
+        let followingMode = false;
+        let currentSpeed = 80;
+        
+        // Update status every 2 seconds
+        setInterval(updateStatus, 2000);
+        updateStatus(); // Initial update
+        
+        async function updateStatus() {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                
+                document.getElementById('followingStatus').textContent = data.following ? 'ON' : 'OFF';
+                document.getElementById('speedStatus').textContent = data.speed;
+                document.getElementById('objectsStatus').textContent = data.detections;
+                document.getElementById('actionStatus').textContent = data.last_action;
+                document.getElementById('robotStatus').textContent = data.robot_available ? 'Connected' : 'Disconnected';
+                
+                followingMode = data.following;
+                currentSpeed = data.speed;
+                
+                // Update button text
+                document.getElementById('followButton').textContent = 
+                    followingMode ? 'Stop Following' : 'Start Following';
+                
+                document.getElementById('speedDisplay').textContent = currentSpeed;
+                
+            } catch (error) {
+                console.error('Status update failed:', error);
+            }
+        }
+        
+        async function sendCommand(command) {
+            try {
+                const response = await fetch('/control', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({command: command})
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(data.message || 'Command executed', 'success');
+                    if (data.following !== undefined) {
+                        followingMode = data.following;
+                    }
+                    if (data.speed !== undefined) {
+                        currentSpeed = data.speed;
+                        document.getElementById('speedDisplay').textContent = currentSpeed;
+                    }
+                    updateStatus();
+                } else {
+                    showMessage(data.message || 'Command failed', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error', 'error');
+                console.error('Command failed:', error);
+            }
+        }
+        
+        function toggleFollowing() {
+            sendCommand('toggle_follow');
+        }
+        
+        function emergencyStop() {
+            sendCommand('stop');
+        }
+        
+        function changeSpeed(direction) {
+            sendCommand('speed_' + direction);
+        }
+        
+        function manualControl(action) {
+            sendCommand(action);
+        }
+        
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type} show`;
+            
+            setTimeout(() => {
+                messageEl.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Handle video feed errors
+        document.getElementById('videoFeed').onerror = function() {
+            this.src = 'data:image/svg+xml;base64,' + btoa(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480">' +
+                '<rect width="640" height="480" fill="#333"/>' +
+                '<text x="320" y="240" text-anchor="middle" fill="white" font-size="24">Camera Unavailable</text>' +
+                '</svg>'
+            );
+        };
+    </script>
+</body>
+</html>
